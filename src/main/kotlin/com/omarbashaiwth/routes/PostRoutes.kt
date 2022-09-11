@@ -5,6 +5,7 @@ import com.omarbashaiwth.data.post.Post
 import com.omarbashaiwth.data.post.PostDataSource
 import com.omarbashaiwth.data.requests.PostRequest
 import com.omarbashaiwth.data.responses.PostResponse
+import com.omarbashaiwth.utils.Constants
 import com.omarbashaiwth.utils.save
 import io.ktor.http.*
 import io.ktor.http.content.*
@@ -30,7 +31,7 @@ fun Route.createPost(
             multiPart.forEachPart { partData ->
                 when (partData) {
                     is PartData.FormItem -> {
-                        if (partData.name == "post_data") {
+                        if (partData.name == Constants.FORM_ITEM_NAME) {
                             request = Gson().fromJson(
                                 partData.value,
                                 PostRequest::class.java
@@ -38,13 +39,13 @@ fun Route.createPost(
                         }
                     }
                     is PartData.FileItem -> {
-                        fileName = partData.save("build/resources/main/static/post_pictures/")
+                        fileName = partData.save("${Constants.POST_PICTURES_PATH}${Constants.POST_PICTURES_FOLDER__NAME}")
                     }
                     else -> Unit
                 }
                 partData.dispose
             }
-            val postImageUrl = "$BASE_URL/posts_pictures/$fileName"
+            val postImageUrl = "$BASE_URL/${Constants.POST_PICTURES_FOLDER__NAME}$fileName"
 
             request?.let {
                 val successfullyCreatePost = postDataSource.insertPost(
@@ -89,7 +90,7 @@ fun Route.getPostsByTag(
     postDataSource: PostDataSource
 ) {
     get("/posts/get-by-tag/") {
-        val tag = call.parameters["tag"]
+        val tag = call.parameters[Constants.PARAM_TAG]
         tag?.let {
             val result = postDataSource.getPostsByTag(it)
             val response = result.map { post ->
