@@ -5,6 +5,8 @@ import org.bson.types.ObjectId
 
 data class Post(
     val title: String,
+    val shortDescription: String,
+    val url: String,
     val body: String,
     val imageUrl:String,
     val date: Long,
