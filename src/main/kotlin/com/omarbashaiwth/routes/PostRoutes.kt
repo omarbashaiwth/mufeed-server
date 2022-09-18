@@ -74,7 +74,9 @@ fun Route.getAllPosts(
     postDataSource: PostDataSource
 ) {
     get("/posts/get") {
-        val posts = postDataSource.getAllPosts()
+        val page = call.parameters[Constants.PARAM_PAGE]?.toInt() ?: 0
+        val limit = call.parameters[Constants.PARAM_LIMIT]?.toInt() ?: 20
+        val posts = postDataSource.getAllPosts(page, limit)
         val response = posts.map {
             PostResponse(
                 title = it.title,

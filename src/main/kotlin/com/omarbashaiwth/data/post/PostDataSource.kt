@@ -2,7 +2,7 @@ package com.omarbashaiwth.data.post
 
 interface PostDataSource {
 
-    suspend fun getAllPosts(): List<Post>
+    suspend fun getAllPosts(page: Int, limit: Int): List<Post>
 
     suspend fun getPostsByTag(tag: String): List<Post>
 
