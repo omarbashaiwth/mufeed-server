@@ -1,9 +1,7 @@
 package com.omarbashaiwth.data.post
 
-import org.litote.kmongo.MongoOperator
 import org.litote.kmongo.contains
 import org.litote.kmongo.coroutine.CoroutineDatabase
-import org.litote.kmongo.eq
 
 class MongoPostDataSource(
     db: CoroutineDatabase
@@ -13,12 +11,11 @@ class MongoPostDataSource(
 
     override suspend fun getAllPosts(
         page: Int,
-        limit: Int,
+        pageSize: Int,
     ): List<Post> {
         return posts.find()
-            .skip((page - 1)*limit)
-            .limit(limit)
-            .partial(true)
+            .skip(page * pageSize)
+            .limit(pageSize)
             .descendingSort(Post::date)
             .toList()
     }

@@ -6,6 +6,7 @@ import com.omarbashaiwth.data.post.PostDataSource
 import com.omarbashaiwth.data.requests.PostRequest
 import com.omarbashaiwth.data.responses.PostResponse
 import com.omarbashaiwth.utils.Constants
+import com.omarbashaiwth.utils.Constants.DEFAULT_PAGE_SIZE
 import com.omarbashaiwth.utils.save
 import io.ktor.http.*
 import io.ktor.http.content.*
@@ -75,8 +76,8 @@ fun Route.getAllPosts(
 ) {
     get("/posts/get") {
         val page = call.parameters[Constants.PARAM_PAGE]?.toInt() ?: 0
-        val limit = call.parameters[Constants.PARAM_LIMIT]?.toInt() ?: 20
-        val posts = postDataSource.getAllPosts(page, limit)
+        val pageSize = call.parameters[Constants.PARAM_PAGE_SIZE]?.toInt() ?: DEFAULT_PAGE_SIZE
+        val posts = postDataSource.getAllPosts(page, pageSize)
         val response = posts.map {
             PostResponse(
                 title = it.title,
