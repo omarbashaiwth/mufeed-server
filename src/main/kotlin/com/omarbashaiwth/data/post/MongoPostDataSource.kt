@@ -14,7 +14,7 @@ class MongoPostDataSource(
         pageSize: Int,
     ): List<Post> {
         return posts.find()
-            .skip(page * pageSize)
+            .skip((page - 1)* pageSize)
             .limit(pageSize)
             .descendingSort(Post::date)
             .toList()

@@ -5,8 +5,8 @@ import com.omarbashaiwth.utils.Constants
 interface PostDataSource {
 
     suspend fun getAllPosts(
-        page: Int = 0,
-        pageSize: Int = Constants.DEFAULT_PAGE_SIZE
+        page: Int,
+        pageSize: Int
     ): List<Post>
 
     suspend fun getPostsByTag(tag: String): List<Post>

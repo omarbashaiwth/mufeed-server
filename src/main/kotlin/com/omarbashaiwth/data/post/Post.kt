@@ -6,11 +6,11 @@ import org.bson.types.ObjectId
 data class Post(
     val title: String,
     val shortDescription: String,
-    val url: String,
+    val links: List<String>,
     val body: String,
     val imageUrl:String,
     val date: Long,
     val tags: List<String>,
-    @BsonId val id: ObjectId = ObjectId()
+    @BsonId val id: String = ObjectId().toString()
 )
 

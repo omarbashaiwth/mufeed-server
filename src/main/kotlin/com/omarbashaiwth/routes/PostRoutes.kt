@@ -17,7 +17,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
 
-private const val BASE_URL = "https://localhost:8080"
+private const val BASE_URL = "http://192.168.0.125:8080"
 
 fun Route.createPost(
     postDataSource: PostDataSource
@@ -52,7 +52,7 @@ fun Route.createPost(
                     Post(
                         title = it.title,
                         shortDescription = it.shortDescription,
-                        url = it.url,
+                        links = it.links,
                         body = it.body,
                         imageUrl = postImageUrl,
                         date = System.currentTimeMillis(),
@@ -75,15 +75,18 @@ fun Route.getAllPosts(
     postDataSource: PostDataSource
 ) {
     get("/posts/get") {
-        val page = call.parameters[Constants.PARAM_PAGE]?.toInt() ?: 0
+        val page = call.parameters[Constants.PARAM_PAGE]?.toInt() ?: 1
         val pageSize = call.parameters[Constants.PARAM_PAGE_SIZE]?.toInt() ?: DEFAULT_PAGE_SIZE
         val posts = postDataSource.getAllPosts(page, pageSize)
         val response = posts.map {
             PostResponse(
+                id = it.id,
                 title = it.title,
+                shortDescription = it.shortDescription,
                 body = it.body,
                 imageUrl = it.imageUrl,
-                tags = it.tags
+                tags = it.tags,
+                links = it.links
             )
         }
         call.respond(HttpStatusCode.OK, response)
@@ -99,10 +102,13 @@ fun Route.getPostsByTag(
             val result = postDataSource.getPostsByTag(it)
             val response = result.map { post ->
                 PostResponse(
+                    id = post.id,
                     title = post.title,
+                    shortDescription = post.shortDescription,
                     body = post.body,
                     imageUrl = post.imageUrl,
-                    tags = post.tags
+                    tags = post.tags,
+                    links = post.links
                 )
             }
             call.respond(HttpStatusCode.OK, response)
