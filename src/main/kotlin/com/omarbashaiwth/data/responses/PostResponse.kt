@@ -10,5 +10,6 @@ data class PostResponse(
     val links: List<String>,
     val body:String,
     val imageUrl: String,
+    val date: String,
     val tags: List<String>
 )

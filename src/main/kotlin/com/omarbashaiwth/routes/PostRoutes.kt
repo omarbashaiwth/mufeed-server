@@ -6,6 +6,7 @@ import com.omarbashaiwth.data.post.PostDataSource
 import com.omarbashaiwth.data.requests.PostRequest
 import com.omarbashaiwth.data.responses.PostResponse
 import com.omarbashaiwth.utils.Constants
+import com.omarbashaiwth.utils.Constants.DATE_PATTERN
 import com.omarbashaiwth.utils.Constants.DEFAULT_PAGE_SIZE
 import com.omarbashaiwth.utils.save
 import io.ktor.http.*
@@ -15,6 +16,8 @@ import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 private const val BASE_URL = "http://192.168.0.125:8080"
@@ -46,7 +49,7 @@ fun Route.createPost(
                 partData.dispose
             }
             val postImageUrl = "$BASE_URL/${Constants.POST_PICTURES_FOLDER__NAME}$fileName"
-
+            val currentDate = SimpleDateFormat(DATE_PATTERN,Locale.getDefault()).format(System.currentTimeMillis())!!
             request?.let {
                 val successfullyCreatePost = postDataSource.insertPost(
                     Post(
@@ -55,7 +58,7 @@ fun Route.createPost(
                         links = it.links,
                         body = it.body,
                         imageUrl = postImageUrl,
-                        date = System.currentTimeMillis(),
+                        date = currentDate,
                         tags = it.tags
                     )
                 )
@@ -78,15 +81,16 @@ fun Route.getAllPosts(
         val page = call.parameters[Constants.PARAM_PAGE]?.toInt() ?: 1
         val pageSize = call.parameters[Constants.PARAM_PAGE_SIZE]?.toInt() ?: DEFAULT_PAGE_SIZE
         val posts = postDataSource.getAllPosts(page, pageSize)
-        val response = posts.map {
+        val response = posts.map { post ->
             PostResponse(
-                id = it.id,
-                title = it.title,
-                shortDescription = it.shortDescription,
-                body = it.body,
-                imageUrl = it.imageUrl,
-                tags = it.tags,
-                links = it.links
+                id = post.id,
+                title = post.title,
+                shortDescription = post.shortDescription,
+                body = post.body,
+                imageUrl = post.imageUrl,
+                date = post.date,
+                tags = post.tags,
+                links = post.links
             )
         }
         call.respond(HttpStatusCode.OK, response)
@@ -107,6 +111,7 @@ fun Route.getPostsByTag(
                     shortDescription = post.shortDescription,
                     body = post.body,
                     imageUrl = post.imageUrl,
+                    date = post.date,
                     tags = post.tags,
                     links = post.links
                 )
