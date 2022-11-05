@@ -9,6 +9,7 @@ import com.omarbashaiwth.utils.Constants
 import com.omarbashaiwth.utils.Constants.DATE_PATTERN
 import com.omarbashaiwth.utils.Constants.DEFAULT_PAGE_SIZE
 import com.omarbashaiwth.utils.save
+import com.omarbashaiwth.utils.toResponseList
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
@@ -81,18 +82,7 @@ fun Route.getAllPosts(
         val page = call.parameters[Constants.PARAM_PAGE]?.toInt() ?: 1
         val pageSize = call.parameters[Constants.PARAM_PAGE_SIZE]?.toInt() ?: DEFAULT_PAGE_SIZE
         val posts = postDataSource.getAllPosts(page, pageSize)
-        val response = posts.map { post ->
-            PostResponse(
-                id = post.id,
-                title = post.title,
-                shortDescription = post.shortDescription,
-                body = post.body,
-                imageUrl = post.imageUrl,
-                date = post.date,
-                tags = post.tags,
-                links = post.links
-            )
-        }
+        val response = posts.toResponseList()
         call.respond(HttpStatusCode.OK, response)
     }
 }
@@ -104,18 +94,7 @@ fun Route.getPostsByTag(
         val tag = call.parameters[Constants.PARAM_TAG]
         tag?.let {
             val result = postDataSource.getPostsByTag(it)
-            val response = result.map { post ->
-                PostResponse(
-                    id = post.id,
-                    title = post.title,
-                    shortDescription = post.shortDescription,
-                    body = post.body,
-                    imageUrl = post.imageUrl,
-                    date = post.date,
-                    tags = post.tags,
-                    links = post.links
-                )
-            }
+            val response = result.toResponseList()
             call.respond(HttpStatusCode.OK, response)
         }
     }
