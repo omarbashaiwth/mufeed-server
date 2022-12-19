@@ -2,6 +2,7 @@ package com.omarbashaiwth.routes
 
 import com.omarbashaiwth.data.requests.AuthRequest
 import com.omarbashaiwth.data.responses.AuthResponse
+import com.omarbashaiwth.data.responses.SimpleResponse
 import com.omarbashaiwth.data.user.User
 import com.omarbashaiwth.data.user.UserDataSource
 import com.omarbashaiwth.security.hash.HashingService
@@ -35,14 +36,12 @@ fun Route.signup(
             )
             val successfullyInsertUser = userDataSource.insertUser(user)
             if (successfullyInsertUser) {
-                call.respond(HttpStatusCode.OK)
+                call.respond(HttpStatusCode.OK, SimpleResponse<Unit>(true,"Successfully created user"))
             } else {
-                call.respond(HttpStatusCode.Conflict)
-                return@post
+                call.respond(HttpStatusCode.BadRequest, SimpleResponse<Unit>(false,"Something went wrong"))
             }
         } else {
-            call.respond(HttpStatusCode.Conflict,"Username already exit")
-            return@post
+            call.respond(HttpStatusCode.OK,SimpleResponse<Unit>(false,"Username already exit"))
         }
     }
 }
@@ -60,29 +59,30 @@ fun Route.login(
         }
         val user = userDataSource.getUserByUsername(request.username)
         if (user == null) {
-            call.respond(HttpStatusCode.Conflict,"Username incorrect")
-            return@post
-        }
-        val passwordMatching = hashingService.verify(
-            input = request.password,
-            saltedHash = SaltedHash(
-                hash = user.password,
-                salt = user.salt
-            )
-        )
-        if (!passwordMatching) {
-            call.respond(HttpStatusCode.Conflict,"Password incorrect")
-            return@post
-        }
+            call.respond(HttpStatusCode.OK,SimpleResponse<Unit>(false,"Username incorrect"))
 
-        val token = tokenService.generate(
-            tokenConfig = tokenConfig,
-            TokenClaim(
-                name = "userId",
-                value = user.id.toString()
+        } else {
+            val passwordMatching = hashingService.verify(
+                input = request.password,
+                saltedHash = SaltedHash(
+                    hash = user.password,
+                    salt = user.salt
+                )
             )
-        )
-        call.respond(HttpStatusCode.OK,AuthResponse(token))
+            if (!passwordMatching) {
+                call.respond(HttpStatusCode.OK,SimpleResponse<Unit>(false,"Password incorrect"))
+            }
+
+            val token = tokenService.generate(
+                tokenConfig = tokenConfig,
+                TokenClaim(
+                    name = "userId",
+                    value = user.id.toString()
+                )
+            )
+            call.respond(HttpStatusCode.OK,SimpleResponse(true,"Successfully logged in",AuthResponse(token)))
+
+        }
 
     }
 }
