@@ -35,6 +35,7 @@ dependencies {
     implementation ("io.ktor:ktor-server-auth:$ktor_version")
     implementation ("io.ktor:ktor-server-auth-jwt:$ktor_version")
     implementation ("io.ktor:ktor-client-gson:$ktor_version")
+    implementation ("io.ktor:ktor-client-okhttp:2.2.1")
 
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")

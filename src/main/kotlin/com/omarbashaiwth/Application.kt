@@ -1,13 +1,14 @@
 package com.omarbashaiwth
 
+import com.omarbashaiwth.fcm.MongoFcmTokenDataSource
 import com.omarbashaiwth.data.post.MongoPostDataSource
 import com.omarbashaiwth.data.user.MongoUserDataSource
-import com.omarbashaiwth.data.user.UserDataSource
 import io.ktor.server.application.*
 import com.omarbashaiwth.plugins.*
 import com.omarbashaiwth.security.hash.SHA256Hashing
 import com.omarbashaiwth.security.token.JwtTokenService
 import com.omarbashaiwth.security.token.TokenConfig
+import io.ktor.client.*
 import org.litote.kmongo.coroutine.coroutine
 import org.litote.kmongo.reactivestreams.KMongo
 
@@ -18,6 +19,7 @@ fun main(args: Array<String>): Unit =
 fun Application.module() {
     val mongodbPassword = System.getenv("MONGODB_PASSWORD")
     val mongodbName = System.getenv("MONGODB_NAME")
+    val fcmServerKey = System.getenv("FCM_SERVER_KEY")
     val db = KMongo.createClient(
         connectionString = "mongodb+srv://omarbashaiwth:$mongodbPassword@cluster0.xdwjjxb.mongodb.net/$mongodbName?retryWrites=true&w=majority"
     ).coroutine
@@ -28,13 +30,23 @@ fun Application.module() {
         audience = environment.config.property("jwt.audience").getString(),
         issuer = environment.config.property("jwt.issuer").getString()
     )
+    val httpClient = HttpClient()
     val userDataSource = MongoUserDataSource(db)
     val postDataSource = MongoPostDataSource(db)
+    val fcmTokenDataSource = MongoFcmTokenDataSource(db)
     val hashingService = SHA256Hashing()
     val tokenService = JwtTokenService()
-
     configureSerialization()
     configureMonitoring()
-    configureRouting(userDataSource,postDataSource,hashingService,tokenService,tokenConfig)
+    configureRouting(
+        userDataSource = userDataSource,
+        postDataSource = postDataSource,
+        fcmTokenDataSource = fcmTokenDataSource,
+        hashingService = hashingService,
+        tokenService = tokenService,
+        tokenConfig = tokenConfig,
+        httpClient = httpClient,
+        fcmServerKey = fcmServerKey,
+    )
     configSecurity(tokenConfig)
 }
