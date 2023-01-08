@@ -35,7 +35,6 @@ fun Application.configureRouting(
         )
         saveFcmToken(fcmTokenDataSource)
         getAllPosts(postDataSource)
-        getPostsByTag(postDataSource)
 
         static {
             resources("static")

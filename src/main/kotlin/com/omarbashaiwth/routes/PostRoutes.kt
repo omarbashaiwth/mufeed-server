@@ -27,7 +27,7 @@ import java.util.*
 import kotlin.collections.List
 
 
-private const val BASE_URL = "http://192.168.100.14:8080"
+private const val BASE_URL = "http://192.168.0.125:8080"
 
 fun Route.createPost(
     postDataSource: PostDataSource,
@@ -102,19 +102,6 @@ fun Route.getAllPosts(
         val posts = postDataSource.getAllPosts(page, pageSize)
         val response = posts.toResponseList()
         call.respond(HttpStatusCode.OK, response)
-    }
-}
-
-fun Route.getPostsByTag(
-    postDataSource: PostDataSource
-) {
-    get("/posts/get-by-tag/") {
-        val tag = call.parameters[Constants.PARAM_TAG]
-        tag?.let {
-            val result = postDataSource.getPostsByTag(it)
-            val response = result.toResponseList()
-            call.respond(HttpStatusCode.OK, response)
-        }
     }
 }
 

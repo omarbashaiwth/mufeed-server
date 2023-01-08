@@ -20,10 +20,6 @@ class MongoPostDataSource(
             .toList()
     }
 
-    override suspend fun getPostsByTag(tag: String): List<Post> {
-        return posts.find(Post::tags contains (tag)).toList()
-    }
-
     override suspend fun insertPost(post: Post): Boolean {
         return posts.insertOne(post).wasAcknowledged()
     }
