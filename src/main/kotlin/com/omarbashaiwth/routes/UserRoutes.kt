@@ -1,5 +1,10 @@
 package com.omarbashaiwth.routes
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential.fromStream
+import com.google.firebase.FirebaseOptions
+import com.google.firebase.auth.EmailIdentifier
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.UserRecord
 import com.omarbashaiwth.data.requests.AuthRequest
 import com.omarbashaiwth.data.responses.AuthResponse
 import com.omarbashaiwth.data.responses.SimpleResponse
@@ -16,6 +21,9 @@ import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.util.pipeline.*
+import kotlinx.coroutines.CompletableDeferred
+import java.io.InputStream
 
 fun Route.signup(
     userDataSource: UserDataSource,
@@ -71,6 +79,7 @@ fun Route.login(
             )
             if (!passwordMatching) {
                 call.respond(HttpStatusCode.OK,SimpleResponse<Unit>(false,"Password incorrect"))
+                return@post
             }
 
             val token = tokenService.generate(
@@ -78,11 +87,30 @@ fun Route.login(
                 TokenClaim(
                     name = "userId",
                     value = user.id.toString()
+                ),
+                TokenClaim(
+                    "email",
+                    user.username
                 )
             )
             call.respond(HttpStatusCode.OK,SimpleResponse(true,"Successfully logged in",AuthResponse(token)))
+            registerUserInFirebase(request.username,request.password)
 
         }
 
     }
+}
+
+private suspend fun PipelineContext<Unit,ApplicationCall>.registerUserInFirebase(email: String, password:String){
+    try {
+        val userRecord = FirebaseAuth.getInstance().createUser(
+            UserRecord.CreateRequest()
+                .setEmail(email)
+                .setPassword(password)
+        )
+        call.respondText("User created successfully: ${userRecord.uid}")
+    } catch (e: Exception) {
+        call.respondText("Error creating user: ${e.message}")
+    }
+
 }

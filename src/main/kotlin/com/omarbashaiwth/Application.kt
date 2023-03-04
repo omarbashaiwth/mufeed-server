@@ -1,5 +1,7 @@
 package com.omarbashaiwth
 
+import com.google.firebase.FirebaseApp
+import com.google.firebase.FirebaseOptions
 import com.omarbashaiwth.fcm.MongoFcmTokenDataSource
 import com.omarbashaiwth.data.post.MongoPostDataSource
 import com.omarbashaiwth.data.user.MongoUserDataSource
@@ -8,15 +10,19 @@ import com.omarbashaiwth.plugins.*
 import com.omarbashaiwth.security.hash.SHA256Hashing
 import com.omarbashaiwth.security.token.JwtTokenService
 import com.omarbashaiwth.security.token.TokenConfig
+import com.omarbashaiwth.utils.FirebaseAdmin
 import io.ktor.client.*
 import org.litote.kmongo.coroutine.coroutine
 import org.litote.kmongo.reactivestreams.KMongo
+import java.io.FileInputStream
+import java.io.InputStream
 
 fun main(args: Array<String>): Unit =
     io.ktor.server.netty.EngineMain.main(args)
 
 @Suppress("unused") // application.conf references the main function. This annotation prevents the IDE from marking it as unused.
 fun Application.module() {
+    FirebaseAdmin.init()
     val mongodbPassword = System.getenv("MONGODB_PASSWORD")
     val mongodbName = System.getenv("MONGODB_NAME")
     val fcmServerKey = System.getenv("FCM_SERVER_KEY")

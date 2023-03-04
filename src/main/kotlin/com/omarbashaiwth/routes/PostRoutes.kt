@@ -1,14 +1,16 @@
 package com.omarbashaiwth.routes
 
+import com.google.firebase.cloud.StorageClient
 import com.google.gson.Gson
-import com.omarbashaiwth.fcm.FcmTokenDataSource
 import com.omarbashaiwth.data.post.Post
 import com.omarbashaiwth.data.post.PostDataSource
 import com.omarbashaiwth.data.requests.PostRequest
+import com.omarbashaiwth.fcm.FcmTokenDataSource
+import com.omarbashaiwth.plugins.email
 import com.omarbashaiwth.utils.Constants
 import com.omarbashaiwth.utils.Constants.DATE_PATTERN
 import com.omarbashaiwth.utils.Constants.DEFAULT_PAGE_SIZE
-import com.omarbashaiwth.utils.save
+import com.omarbashaiwth.utils.generateImagePath
 import com.omarbashaiwth.utils.toResponseList
 import io.ktor.client.*
 import io.ktor.client.request.*
@@ -16,15 +18,18 @@ import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
+import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.*
+import io.ktor.util.pipeline.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.List
+import java.util.concurrent.TimeUnit
 
 
 private const val BASE_URL = "http://192.168.0.125:8080"
@@ -39,7 +44,8 @@ fun Route.createPost(
         post("posts/create") {
             val multiPart = call.receiveMultipart()
             var request: PostRequest? = null
-            var fileName: String? = null
+            val email = call.principal<JWTPrincipal>()?.email ?: ""
+            var imageUrl: String? = null
 
             multiPart.forEachPart { partData ->
                 when (partData) {
@@ -52,41 +58,51 @@ fun Route.createPost(
                         }
                     }
                     is PartData.FileItem -> {
-                        fileName = partData.save("${Constants.POST_PICTURES_PATH}${Constants.POST_PICTURES_FOLDER__NAME}")
+                        if (partData.contentType?.match(ContentType.Image.Any) == true) {
+                            imageUrl = partData.generateImagePath(email)
+                            partData.uploadImageToFirebase(
+                                call = call,
+                                imagePath = imageUrl ?: ""
+                            )
+                        } else {
+                            throw UnsupportedMediaTypeException(ContentType.Image.Any)
+                        }
                     }
                     else -> Unit
                 }
                 partData.dispose
             }
-            val postImageUrl = "$BASE_URL/${Constants.POST_PICTURES_FOLDER__NAME}$fileName"
             val currentDate = SimpleDateFormat(DATE_PATTERN, Locale.getDefault()).format(System.currentTimeMillis())!!
-            request?.let {
-                val successfullyCreatePost = postDataSource.insertPost(
-                    Post(
-                        title = it.title,
-                        shortDescription = it.shortDescription,
-                        links = it.links,
-                        body = it.body,
-                        imageUrl = postImageUrl,
-                        date = currentDate,
-                        tags = it.tags
+            if (imageUrl != null) {
+                request?.let {
+                    val successfullyCreatePost = postDataSource.insertPost(
+                        Post(
+                            title = it.title,
+                            shortDescription = it.shortDescription,
+                            links = it.links,
+                            body = it.body,
+                            imageUrl = imageUrl ?: "",
+                            date = currentDate,
+                            tags = it.tags
+                        )
                     )
-                )
-                if (successfullyCreatePost) {
-                    val tokens = fcmTokenDataSource.getAllTokens().map { it.token }
-                    sendPushNotification(
-                        httpClient = httpClient,
-                        fcmServerKey = fcmServerKey,
-                        fcmTokens = tokens,
-                        title = it.title,
-                        shortDescription = it.shortDescription,
-                        postImageUrl = postImageUrl
-                    )
-                    call.respond(HttpStatusCode.OK)
-                } else {
-                    call.respond(HttpStatusCode.Conflict, "something went wrong")
-                    return@post
+                    if (successfullyCreatePost) {
+                        val tokens = fcmTokenDataSource.getAllTokens().map { it.token }
+                        sendPushNotification(
+                            httpClient = httpClient,
+                            fcmServerKey = fcmServerKey,
+                            fcmTokens = tokens,
+                            title = it.title,
+                            shortDescription = it.shortDescription,
+                            postImageUrl = imageUrl ?: ""
+                        )
+                        call.respond(HttpStatusCode.OK)
+                    } else {
+                        call.respond(HttpStatusCode.Conflict, "something went wrong")
+                        return@post
+                    }
                 }
+
             }
         }
     }
@@ -134,7 +150,21 @@ private suspend fun sendPushNotification(
             }
             """
         }
-    } catch (e:Exception){
+    } catch (e: Exception) {
         print("ERROR: ${e.localizedMessage}")
     }
+}
+
+suspend fun PartData.FileItem.uploadImageToFirebase(
+    call: ApplicationCall,
+    imagePath: String
+){
+    val inputStream = withContext(Dispatchers.IO) {
+        streamProvider().readBytes()
+    }
+    val blob = StorageClient.getInstance().bucket()
+        .create(imagePath, inputStream)
+    val downloadUrl = blob.signUrl(1 , TimeUnit.HOURS).toString()
+    call.respondText(downloadUrl)
+
 }

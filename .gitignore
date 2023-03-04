@@ -37,3 +37,4 @@ out/
 
 /src/main/resources/application.conf
 keys/
+src/main/resources/mufeed-app-firebase-adminsdk.json

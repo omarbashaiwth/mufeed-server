@@ -26,3 +26,6 @@ fun Application.configSecurity(config: TokenConfig) {
         }
     }
 }
+
+val JWTPrincipal.email: String?
+    get() = payload.claims["email"]?.asString()

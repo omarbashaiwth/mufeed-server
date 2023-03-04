@@ -47,6 +47,10 @@ dependencies {
 
     implementation("commons-codec:commons-codec:$commons_codec_version")
 
+    //Firebase
+    implementation("com.google.firebase:firebase-admin:9.0.0")
+
+
     sshAntTask("org.apache.ant:ant-jsch:1.10.12") // to access ssh from gradle to send commands to the server
 }
 
